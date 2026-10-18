@@ -25,6 +25,7 @@ export default async function handler(req, res) {
 
   const allowed =
     path === '/api/v1/analyze' ||
+    /^\/api\/v1\/uploads\/(init|[a-f0-9]{32}\/(chunk|complete))$/.test(path) ||
     /^\/api\/v1\/jobs\/[a-f0-9]{32}(\/report|\/evidence\/(original|annotated)_[0-2]\.jpg)?$/.test(path)
 
   if (!allowed) {

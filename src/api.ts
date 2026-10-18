@@ -39,18 +39,57 @@ async function checkedJson(res: Response): Promise<unknown> {
   try { return await res.json() } catch { throw new Error('Сервер вернул некорректный JSON.') }
 }
 
-export async function uploadVideo(baseUrl: string, apiKey: string, file: File, signal?: AbortSignal): Promise<string> {
-  const form = new FormData()
-  form.append('file', file)
-  const res = await fetch(`${normalizeBaseUrl(baseUrl)}/api/v1/analyze`, {
+
+export async function uploadVideo(
+  baseUrl: string,
+  apiKey: string,
+  file: File,
+  signal?: AbortSignal
+): Promise<string> {
+  const base = normalizeBaseUrl(baseUrl)
+  const headers = { 'X-API-Key': apiKey }
+
+  const init = await fetch(`${base}/api/v1/uploads/init`, {
     method: 'POST',
-    headers: { 'X-API-Key': apiKey },
-    body: form,
-    signal,
+    headers,
+    signal
   })
-  const data = await checkedJson(res) as { job_id?: unknown }
-  if (typeof data.job_id !== 'string' || !data.job_id) throw new Error('Сервер не вернул job_id.')
-  return data.job_id
+
+  const session = await checkedJson(init) as { upload_id: string }
+
+  const chunkSize = 2 * 1024 * 1024
+
+  for (let offset = 0; offset < file.size; offset += chunkSize) {
+    const chunk = file.slice(offset, offset + chunkSize)
+
+    const response = await fetch(
+      `${base}/api/v1/uploads/${session.upload_id}/chunk`,
+      {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/octet-stream'
+        },
+        body: chunk,
+        signal
+      }
+    )
+
+    await checkedJson(response)
+  }
+
+  const complete = await fetch(
+    `${base}/api/v1/uploads/${session.upload_id}/complete`,
+    {
+      method: 'POST',
+      headers,
+      signal
+    }
+  )
+
+  const result = await checkedJson(complete) as { job_id: string }
+
+  return result.job_id
 }
 
 export async function fetchJob(baseUrl: string, apiKey: string, jobId: string, signal?: AbortSignal): Promise<AnalysisJob> {
