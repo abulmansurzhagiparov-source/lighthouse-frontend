@@ -28,7 +28,11 @@ export default async function handler(req, res) {
     /^\/api\/v1\/uploads\/(init|[a-f0-9]{32}\/(chunk|complete))$/.test(path) ||
     /^\/api\/v1\/jobs\/[a-f0-9]{32}(\/report|\/evidence\/(original|annotated)_[0-2]\.jpg)?$/.test(path)
 
-  if (!allowed) {
+
+  const annotationRoute =
+    /^\/api\/v1\/jobs\/[a-f0-9]{32}\/annotations(\/\d+)?$/.test(path)
+
+  if (!allowed && !annotationRoute) {
     return res.status(404).json({ detail: 'Not found' })
   }
 
