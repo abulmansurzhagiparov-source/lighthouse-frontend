@@ -117,6 +117,7 @@ export async function fetchJob(baseUrl: string, apiKey: string, jobId: string, s
         start_sec?: number
         description?: string
         title?: string
+        evidence_frames?: Array<{ timestamp_sec: number; image_base64: string }>
       }>
     }
 
@@ -126,7 +127,9 @@ export async function fetchJob(baseUrl: string, apiKey: string, jobId: string, s
       type: event.title || event.event_type || 'Observation',
       timecode_sec: event.start_sec ?? 0,
       description: event.description || 'Требуется ручная проверка.',
-      evidence_frames: [],
+      evidence_frames: Array.isArray(event.evidence_frames)
+        ? event.evidence_frames
+        : [],
     }))
 
     data.verdict = 'requires_review'
