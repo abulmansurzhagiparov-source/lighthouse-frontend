@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ detail: 'Unauthorized' })
   }
 
-  const path = (req.url || '').split('?')[0]
+  const path = '/api/v1/' + String(req.query.path || '').replace(/^\/+/, '')
 
   const allowed =
     path === '/api/v1/analyze' ||
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
   }
 
   const upstream = new URL(
-    req.url,
+    path,
     process.env.BACKEND_URL.replace(/\/+$/, '') + '/'
   )
 
